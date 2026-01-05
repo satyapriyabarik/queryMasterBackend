@@ -37,7 +37,6 @@ const typeDefs = gql`
     id: ID!
     name: String
     sql_text: String!
-    rules: JSON
     created_at: String!
   }
 
@@ -88,7 +87,7 @@ const typeDefs = gql`
     notifyItem(id: ID!, type: NotifyType!): Boolean
 
     # Query Builder (AST-based)
-    saveQuery(name: String, rules: JSON!): Boolean
+    saveQuery(name: String): Boolean
 
     # RAW SQL
     executeRawQuery(sql: String!): JSON

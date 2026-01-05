@@ -36,7 +36,6 @@ const queryBuilderResolvers = {
             id,
             name,
             sql_text,
-            rules,
             created_at
           FROM query_history
           WHERE name LIKE ?
