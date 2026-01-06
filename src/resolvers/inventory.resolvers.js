@@ -4,53 +4,6 @@ const { sendAlert } = require("../services/alertService");
 const { safeQuery, mockExpired } = require("../utils/safeQuery");
 const mockInventory = require("../data/inventory");
 
-/**
- * GraphQL resolvers for inventory management operations
- *
- * @typedef {Object} inventoryResolvers
- *
- * @property {Object} Query - GraphQL query resolvers
- * @property {Function} Query.inventory - Retrieves all inventory items sorted by creation date
- *   @returns {Promise<Array>} Array of inventory items with calculated notification countdown
- *   @description Fetches complete inventory with stock levels, expiry dates, and notifyRemainingSeconds
- *   which drives UI countdown timers
- *
- * @property {Function} Query.nearExpiry - Retrieves items expiring within specified days
- *   @param {number} days - Number of days to look ahead for expiry
- *   @returns {Promise<Array>} Array of items expiring soon with id, name, quantity, expiryDate
- *
- * @property {Function} Query.expiredItems - Retrieves items that have already expired
- *   @returns {Promise<Array>} Array of expired items with id, name, quantity, expiryDate
- *
- * @property {Function} Query.outOfStock - Retrieves items with zero quantity
- *   @returns {Promise<Array>} Array of out of stock items with id, name, quantity
- *
- * @property {Function} Query.lowStock - Retrieves items below minimum stock level
- *   @returns {Promise<Array>} Array of low stock items with current quantity and minStockLevel
- *
- * @property {Function} Query.overStocked - Retrieves items exceeding maximum stock level
- *   @returns {Promise<Array>} Array of overstocked items with current quantity and maxStockLevel
- *
- * @property {Object} Mutation - GraphQL mutation resolvers
- * @property {Function} Mutation.addItem - Creates new inventory item
- *   @param {string} name - Item name
- *   @param {string} category - Item category
- *   @param {number} quantity - Initial quantity
- *   @param {Date} expiryDate - Item expiration date
- *   @param {string} storageLocation - Where item is stored
- *   @param {number} minStockLevel - Minimum stock threshold
- *   @param {number} maxStockLevel - Maximum stock threshold
- *   @param {number} costPerUnit - Cost per unit
- *   @returns {Promise<Object>} Created item with assigned UUID
- *
- * @property {Function} Mutation.notifyItem - Sends alert for item with 2-hour cooldown enforcement
- *   @param {string} id - Item ID to notify about
- *   @param {string} type - Alert type/severity
- *   @returns {Promise<boolean>} True if notification sent successfully
- *   @throws {Error} If item not found or cooldown period not elapsed
- *   @description Updates last_notified_at timestamp and increments notify_count to prevent alert spam
- */
-console.log("typeof safeQuery =", typeof safeQuery);
 function normalizeMock(item) {
   return {
     id: item.id,
@@ -249,73 +202,93 @@ const inventoryResolvers = {
     /* =========================
        NOTIFY ITEM (WITH COOLDOWN)
        ========================= */
+
     notifyItem: async (_, { id, type }) => {
       const [[item]] = await db.execute(
         `
-    SELECT last_notified_at
-    FROM inventory
-    WHERE id = ?
+      SELECT 
+        name,
+        quantity,
+        min_stock_level AS minStockLevel,
+        DATE_FORMAT(expiry_date, '%Y-%m-%d') AS expiryDate,
+        last_notified_at
+      FROM inventory
+      WHERE id = ?
     `,
         [id]
       );
 
       if (!item) throw new Error("Item not found");
 
+      /* ========== COOLDOWN CHECK ========== */
       if (item.last_notified_at) {
         const diffSeconds =
           (Date.now() - new Date(item.last_notified_at).getTime()) / 1000;
 
-        if (diffSeconds < 2 * 60 * 60) {
-          const remaining = Math.ceil((2 * 60 * 60 - diffSeconds) / 60);
+        if (diffSeconds < COOLDOWN_SECONDS) {
+          const remaining = Math.ceil((COOLDOWN_SECONDS - diffSeconds) / 60);
           throw new Error(`Try again in ${remaining} minutes`);
         }
       }
 
-      // 🔔 send alert
-      // Fetch item details to determine alert type
-      const [[itemDetails]] = await db.execute(
-        `
-        SELECT name, quantity, min_stock_level, expiry_date
-        FROM inventory
-        WHERE id = ?
-        `,
-        [id]
-      );
+      /* ========== SUBJECT & MESSAGE BUILDER ========== */
 
-      let message, severity;
+      let subject = "";
+      let message = "";
+      let severity = "info";
 
-      // Determine alert type and message
-      if (itemDetails.quantity === 0) {
-        message = `${itemDetails.name} is out of stock`;
-        severity = "critical";
-      } else if (itemDetails.quantity <= itemDetails.min_stock_level) {
-        message = `${itemDetails.name} is running low (${itemDetails.quantity} remaining)`;
-        severity = "warning";
-      } else if (new Date(itemDetails.expiry_date) < new Date()) {
-        message = `${itemDetails.name} has expired`;
-        severity = "critical";
-      } else {
-        const daysUntilExpiry = Math.ceil(
-          (new Date(itemDetails.expiry_date) - new Date()) /
-            (1000 * 60 * 60 * 24)
-        );
-        message = `${itemDetails.name} expires in ${daysUntilExpiry} days`;
-        severity = "warning";
+      switch (type) {
+        case "EXPIRED":
+          subject = "❌ EXPIRED ITEM ALERT";
+          message = `Item: ${item.name}
+Expiry Date: ${item.expiryDate}
+This item is already expired. Immediate action required.`;
+          severity = "critical";
+          break;
+
+        case "NEAR_EXPIRY":
+          subject = "⏰ NEAR EXPIRY ALERT";
+          message = `Item: ${item.name}
+Expiry Date: ${item.expiryDate}
+This item will expire soon. Please prioritize usage.`;
+          severity = "warning";
+          break;
+
+        case "OUT_OF_STOCK":
+          subject = "🚨 OUT OF STOCK ALERT";
+          message = `Item: ${item.name}
+The item is OUT OF STOCK.
+Immediate restock required.`;
+          severity = "critical";
+          break;
+
+        case "LOW_STOCK":
+          subject = "⚠️ LOW STOCK ALERT";
+          message = `Item: ${item.name}
+Quantity Remaining: ${item.quantity}
+Minimum Stock Level: ${item.minStockLevel}
+Consider replenishing soon.`;
+          severity = "warning";
+          break;
+
+        default:
+          throw new Error("Invalid notification type");
       }
 
+      /* ========== SEND ALERT ========== */
       await sendAlert({
-        subject: "Inventory Alert",
+        subject,
         message,
         severity,
       });
 
-      // ✅ THIS IS CRITICAL
+      /* ========== PERSIST COOLDOWN ========== */
       await db.execute(
         `
-    UPDATE inventory
-    SET last_notified_at = NOW(),
-        notify_count = COALESCE(notify_count, 0) + 1
-    WHERE id = ?
+      UPDATE inventory
+      SET last_notified_at = NOW(),
+          notify_count = COALESCE(notify_count, 0) + 1
+      WHERE id = ?
     `,
         [id]
       );
