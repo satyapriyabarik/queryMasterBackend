@@ -1,0 +1,59 @@
+<mjml>
+  <mj-head>
+    <mj-title>{{subject}}</mj-title>
+
+    <mj-attributes>
+      <mj-all font-family="Arial, Helvetica, sans-serif" />
+      <mj-text font-size="14px" line-height="1.6" />
+    </mj-attributes>
+  </mj-head>
+
+  <mj-body background-color="#fafbfc">
+    <!-- LOGO -->
+    <mj-section background-color="#ffffff">
+      <mj-column>
+        <mj-image width="140px" src="LOGO_URL_HERE" />
+      </mj-column>
+    </mj-section>
+
+    <!-- BANNER -->
+    <mj-section background-color="#ffb300">
+      <mj-column>
+        <mj-text
+          align="center"
+          color="#000000"
+          font-size="18px"
+          font-weight="bold"
+        >
+          {{notificationType}}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- MAIN CARD -->
+    <mj-section background-color="#ffffff" padding="24px">
+      <mj-column>
+        <mj-text font-size="16px" font-weight="bold"> {{itemName}} </mj-text>
+
+        <mj-text> {{message}} </mj-text>
+
+        <mj-text>
+          <strong>Quantity:</strong> {{quantity}}<br />
+          <strong>Minimum Level:</strong> {{minStockLevel}}
+        </mj-text>
+
+        <mj-divider border-color="#eeeeee" />
+
+        <!-- QR CODE -->
+        <mj-image width="140px" src="QR_IMAGE_URL_HERE" />
+        <mj-text align="center" font-size="12px" color="#555555">
+          Scan to restock
+        </mj-text>
+
+        <mj-button href="{{restockUrl}}" background-color="#ff9800">
+          Restock Now
+        </mj-button>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

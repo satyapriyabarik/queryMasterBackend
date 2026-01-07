@@ -1,0 +1,74 @@
+<mjml>
+  <mj-head>
+    <mj-title>{{subject}}</mj-title>
+
+    <mj-attributes>
+      <mj-all font-family="Arial, Helvetica, sans-serif" />
+      <mj-text font-size="14px" line-height="1.6" />
+      <mj-button border-radius="6px" font-weight="bold" />
+    </mj-attributes>
+  </mj-head>
+
+  <mj-body background-color="#f6f9fc">
+    <!-- HEADER WITH LOGO -->
+    <mj-section background-color="#ffffff" padding="10px 0">
+      <mj-column>
+        <mj-image width="140px" src="LOGO_URL_HERE" alt="Inventory System" />
+      </mj-column>
+    </mj-section>
+
+    <!-- TITLE BAND -->
+    <mj-section background-color="#d32f2f" padding="20px 0">
+      <mj-column>
+        <mj-text
+          align="center"
+          color="#ffffff"
+          font-size="18px"
+          font-weight="bold"
+        >
+          {{notificationType}}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- CARD -->
+    <mj-section background-color="#ffffff" padding="24px">
+      <mj-column>
+        <mj-text font-size="16px" font-weight="bold"> {{itemName}} </mj-text>
+
+        <mj-divider border-color="#eeeeee" />
+
+        <mj-text> {{message}} </mj-text>
+
+        <mj-text>
+          <strong>Expiry Date:</strong> {{expiryDate}}<br />
+          <strong>Quantity Remaining:</strong> {{quantity}}
+        </mj-text>
+
+        <mj-divider border-color="#eeeeee" />
+
+        <!-- QR CODE -->
+        <mj-image
+          width="140px"
+          src="QR_IMAGE_URL_HERE"
+          alt="Open in dashboard"
+        />
+        <mj-text align="center" font-size="12px" color="#777777">
+          Scan to open item in Dashboard
+        </mj-text>
+
+        <mj-button href="{{dashboardUrl}}" background-color="#0B5CFF">
+          Open Dashboard
+        </mj-button>
+      </mj-column>
+    </mj-section>
+
+    <mj-section>
+      <mj-column>
+        <mj-text align="center" font-size="12px" color="#777777">
+          © {{year}} Inventory Management System
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

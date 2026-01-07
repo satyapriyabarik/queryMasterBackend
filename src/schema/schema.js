@@ -93,5 +93,59 @@ const typeDefs = gql`
     executeRawQuery(sql: String!): JSON
     saveExecutedQuery(sql: String!): Boolean # ✅ ADD THIS
   }
+  # ============LOT and Expiry=============
+
+  type InventoryLot {
+    id: ID!
+    batchNo: String
+    quantity: Int!
+    expiryDate: String!
+    lastNotifiedAt: String
+    notifyRemainingSeconds: Int
+  }
+
+  type Product {
+    id: ID!
+    name: String!
+    category: String!
+    unit: String
+    minStockLevel: Int!
+    maxStockLevel: Int
+    lots: [InventoryLot!]! # << key change
+    totalQuantity: Int! # sum of lots
+  }
+
+  enum NotifyType {
+    LOW_STOCK
+    OUT_OF_STOCK
+    NEAR_EXPIRY
+    EXPIRED
+  }
+
+  type Query {
+    products: [Product!]!
+    product(id: ID!): Product
+    lots(productId: ID!): [InventoryLot!]!
+  }
+
+  type Mutation {
+    addProduct(
+      name: String!
+      category: String!
+      unit: String
+      minStockLevel: Int!
+      maxStockLevel: Int
+    ): Product!
+
+    addLot(
+      productId: ID!
+      batchNo: String
+      quantity: Int!
+      expiryDate: String!
+    ): InventoryLot!
+
+    notifyLot(id: ID!, type: NotifyType!): Boolean
+  }
 `;
+
 module.exports = { typeDefs };

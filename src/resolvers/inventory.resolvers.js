@@ -3,7 +3,7 @@ const { db } = require("../db");
 const { sendAlert } = require("../services/alertService");
 const { safeQuery, mockExpired } = require("../utils/safeQuery");
 const mockInventory = require("../data/inventory");
-
+const COOLDOWN_SECONDS = Number(process.env.COOLDOWN_SECONDS) || 7200;
 function normalizeMock(item) {
   return {
     id: item.id,
@@ -158,6 +158,33 @@ const inventoryResolvers = {
       if (!rows) return mockInventory.map(normalizeMock);
       return rows;
     },
+    products: async () => {
+      const [products] = await db.execute(`
+      SELECT *
+      FROM product
+    `);
+
+      const [lots] = await db.execute(`
+      SELECT *,
+      GREATEST(
+        0,
+        TIMESTAMPDIFF(
+          SECOND,
+          NOW(),
+          DATE_ADD(last_notified_at, INTERVAL 2 HOUR)
+        )
+      ) AS notifyRemainingSeconds
+      FROM inventory_lot
+    `);
+
+      return products.map((p) => ({
+        ...p,
+        lots: lots.filter((l) => l.product_id === p.id),
+        totalQuantity: lots
+          .filter((l) => l.product_id === p.id)
+          .reduce((a, b) => a + b.quantity, 0),
+      }));
+    },
   },
 
   Mutation: {
@@ -276,10 +303,24 @@ Consider replenishing soon.`;
       }
 
       /* ========== SEND ALERT ========== */
+      // await sendAlert({
+      //   subject,
+      //   message,
+      //   severity,
+      // });
       await sendAlert({
         subject,
         message,
         severity,
+        meta: {
+          type,
+          itemName: item.name,
+          quantity: item.quantity,
+          minStockLevel: item.minStockLevel,
+          expiryDate: item.expiryDate,
+          dashboardUrl: "http://localhost:3000/" + id,
+          logoUrl: "https://www.nagarro.com/hubfs/favicon-1.ico",
+        },
       });
 
       /* ========== PERSIST COOLDOWN ========== */
@@ -295,6 +336,26 @@ Consider replenishing soon.`;
 
       return true;
     },
+  },
+
+  addLot: async (_, args) => {
+    const id = uuid();
+
+    await db.execute(
+      `
+    INSERT INTO inventory_lot (
+      id,
+      product_id,
+      batch_no,
+      quantity,
+      expiry_date
+    )
+    VALUES (?, ?, ?, ?, ?)
+  `,
+      [id, args.productId, args.batchNo, args.quantity, args.expiryDate]
+    );
+
+    return { id, ...args };
   },
 };
 
