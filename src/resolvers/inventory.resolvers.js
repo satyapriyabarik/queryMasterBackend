@@ -303,11 +303,7 @@ Consider replenishing soon.`;
       }
 
       /* ========== SEND ALERT ========== */
-      // await sendAlert({
-      //   subject,
-      //   message,
-      //   severity,
-      // });
+
       await sendAlert({
         subject,
         message,
@@ -318,8 +314,8 @@ Consider replenishing soon.`;
           quantity: item.quantity,
           minStockLevel: item.minStockLevel,
           expiryDate: item.expiryDate,
-          dashboardUrl: "http://localhost:3000/" + id,
-          logoUrl: "https://www.nagarro.com/hubfs/favicon-1.ico",
+          dashboardUrl: "http://localhost:3000/",
+          logoUrl: "../assets/favicon-1.ico",
         },
       });
 

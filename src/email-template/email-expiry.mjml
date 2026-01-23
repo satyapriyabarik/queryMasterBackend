@@ -4,7 +4,7 @@
 
     <mj-attributes>
       <mj-all font-family="Arial, Helvetica, sans-serif" />
-      <mj-text font-size="14px" line-height="1.6" />
+      <mj-text font-size="14px" line-height="15px" />
       <mj-button border-radius="6px" font-weight="bold" />
     </mj-attributes>
   </mj-head>

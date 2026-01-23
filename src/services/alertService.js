@@ -24,7 +24,7 @@ async function sendAlert({ subject, message, severity, meta = {} }) {
         expiryDate: meta.expiryDate ?? "",
         dashboardUrl: meta.dashboardUrl || "https://yourapp/dashboard",
         year: new Date().getFullYear(),
-        logoUrl: meta.logoUrl || "LOGO_URL_HERE",
+        logoUrl: meta.logoUrl,
         qrUrl:
           meta.qrUrl ||
           `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
