@@ -37,7 +37,6 @@ const typeDefs = gql`
     id: ID!
     name: String
     sql_text: String!
-    rules: JSON
     created_at: String!
   }
 

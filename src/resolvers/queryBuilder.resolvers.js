@@ -1,6 +1,6 @@
 const { db } = require("../db");
 const { validateRawSQL } = require("../utils/sqlValidator");
-
+const { v4: uuid } = require("uuid");
 /* ======================================================
    QUERY BUILDER RESOLVERS
    ====================================================== */
@@ -36,7 +36,6 @@ const queryBuilderResolvers = {
             id,
             name,
             sql_text,
-            rules,
             created_at
           FROM query_history
           WHERE name LIKE ?
@@ -113,14 +112,14 @@ const queryBuilderResolvers = {
         );
 
         const name = `Query ${count + 1}`;
-
+        const id = uuid();
         await db.execute(
           `
-          INSERT INTO query_history (name, sql_text)
-          VALUES (?, ?)
+          INSERT INTO query_history (id, name, sql_text)
+          VALUES (?, ?, ?)
           `,
-          [name, sql]
-        );
+          [id, name, sql]
+        );            
 
         return true;
       } catch (err) {
