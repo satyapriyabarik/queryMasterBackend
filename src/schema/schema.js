@@ -87,7 +87,7 @@ const typeDefs = gql`
     notifyItem(id: ID!, type: NotifyType!): Boolean
 
     # Query Builder (AST-based)
-    saveQuery(name: String, rules: JSON!): Boolean
+    saveQuery(name: String): Boolean
 
     # RAW SQL
     executeRawQuery(sql: String!): JSON
