@@ -7,7 +7,7 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   cors: {
-    origin: ["http://localhost:3000"], // allow React app
+    origin: ["http://localhost:3000", "http://querybuilder-frontend.s3-website.ap-south-1.amazonaws.com/"], // allow React app
     credentials: true
   }
 });
