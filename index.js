@@ -16,9 +16,9 @@
 //   console.log(`🚀 GraphQL Server ready at ${url}`);
 // });
 require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
 const { ApolloServer } = require("apollo-server-express");
+const express = require("express");
+const bodyParser = require("body-parser");
 
 const { typeDefs } = require("./src/schema/schema");
 const { resolvers } = require("./src/resolvers");
@@ -27,14 +27,10 @@ async function startServer() {
 
   const app = express();
 
-  app.use(cors({
-    origin: [
-      "http://localhost:3000",
-      "http://querybuilder-frontend.s3-website.ap-south-1.amazonaws.com"
-    ],
-    credentials: true
-  }));
+  // Body parser
+  app.use(bodyParser.json());
 
+  // Create Apollo Server (NO CORS here)
   const server = new ApolloServer({
     typeDefs,
     resolvers
@@ -42,15 +38,19 @@ async function startServer() {
 
   await server.start();
 
+  // Attach GraphQL middleware
   server.applyMiddleware({
     app,
     path: "/graphql",
-    cors: false
+    cors: false   // IMPORTANT: disable Apollo CORS
   });
 
-  app.listen(4000, () => {
-    console.log("🚀 GraphQL Server ready at http://localhost:4000/graphql");
+  const PORT = process.env.PORT || 4000;
+
+  app.listen(PORT, () => {
+    console.log(`🚀 GraphQL Server ready at http://localhost:${PORT}${server.graphqlPath}`);
   });
+
 }
 
 startServer();
