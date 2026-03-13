@@ -15,7 +15,7 @@
 // server.listen({ port: 4000 }).then(({ url }) => {
 //   console.log(`🚀 GraphQL Server ready at ${url}`);
 // });
-require("dotenv").config();
+require("dotenv").config({ path: __dirname + "/.env" });
 const { ApolloServer } = require("apollo-server-express");
 const express = require("express");
 const bodyParser = require("body-parser");
